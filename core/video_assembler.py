@@ -128,11 +128,11 @@ class VideoAssembler:
         visual_paths: List[Path]
     ) -> Path:
         """
-        Create video timeline by concatenating scene visuals with proper timing.
+        Create video timeline by concatenating Manim scene videos.
         
         Args:
             script: VideoScript with scene timing
-            visual_paths: List of visual image paths
+            visual_paths: List of visual video paths (mp4)
             
         Returns:
             Path to concatenated video file
@@ -142,46 +142,39 @@ class VideoAssembler:
                 f"Visual count ({len(visual_paths)}) doesn't match scene count ({len(script.scenes)})"
             )
         
-        # Create temp directory for scene videos
+        # Create temp directory for scene processing
         temp_dir = Path("./temp")
         temp_dir.mkdir(exist_ok=True)
         
-        scene_videos = []
+        processed_scenes = []
         
-        # Convert each static image to video with scene duration
+        # Process each Manim clip to ensure it matches scene duration exactly
         for i, (scene, visual_path) in enumerate(zip(script.scenes, visual_paths)):
-            scene_video_path = temp_dir / f"scene_{i:02d}.mp4"
+            output_scene_path = temp_dir / f"processed_scene_{i:02d}.mp4"
             
-            # Get platform resolution
-            resolution = self._get_platform_resolution(script.brief.platform)
+            # Manim clips might be slightly longer/shorter than audio
+            # We enforce the exact duration calculated from audio/script
+            # using tpad or trim filters
             
-            # Create video from static image with scene duration
             (
                 ffmpeg
-                .input(str(visual_path), loop=1, t=scene.duration)
-                .filter('scale', resolution[0], resolution[1])
-                .output(
-                    str(scene_video_path),
-                    vcodec='libx264',
-                    pix_fmt='yuv420p',
-                    r=30,  # 30 fps
-                    **{'b:v': '5M'}  # Bitrate
-                )
+                .input(str(visual_path))
+                .filter('setpts', 'PTS-STARTPTS')
+                .output(str(output_scene_path), t=scene.duration)
                 .overwrite_output()
                 .run(quiet=True)
             )
             
-            scene_videos.append(scene_video_path)
+            processed_scenes.append(output_scene_path)
         
-        # Concatenate all scene videos
+        # Concatenate processed clips
         concat_list_path = temp_dir / "concat_list.txt"
         with open(concat_list_path, 'w') as f:
-            for video in scene_videos:
+            for video in processed_scenes:
                 f.write(f"file '{video.absolute()}'\n")
         
         timeline_path = temp_dir / "timeline.mp4"
         
-        # Concatenate using concat demuxer (lossless)
         subprocess.run(
             [
                 "ffmpeg",

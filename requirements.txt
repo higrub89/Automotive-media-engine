@@ -1,8 +1,12 @@
-# LLM Providers (Gemini primary, Claude optional)
+# Zero-Cost Core
 google-generativeai>=0.8.0
+edge-tts>=6.1.9
+manim>=0.18.0
+
+# Legacy / Optional (Paid)
 anthropic>=0.40.0
 elevenlabs>=1.0.0
-ffmpeg-python>=0.2.0
+
 fastmcp>=0.2.0
 pydantic>=2.0.0
 python-dotenv>=1.0.0
