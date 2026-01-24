@@ -1,13 +1,15 @@
 """
-Script Engine: Converts ContentBrief into structured VideoScript using Claude API.
+Script Engine: Converts ContentBrief into structured VideoScript using LLM APIs.
 
 This is the "brain" of the system - it takes technical content and transforms it
 into engaging, well-paced narration suitable for video format.
+
+Supports multiple LLM providers with Gemini Pro as default (free via 42 Madrid).
 """
 
 import os
+from enum import Enum
 from typing import Optional
-from anthropic import Anthropic
 from dotenv import load_dotenv
 
 from .models import ContentBrief, VideoScript, Scene, AudienceLevel
@@ -15,26 +17,53 @@ from .models import ContentBrief, VideoScript, Scene, AudienceLevel
 load_dotenv()
 
 
+class LLMProvider(str, Enum):
+    """Supported LLM providers for script generation."""
+    GEMINI = "gemini"  # Default: Free via 42 Madrid Pro
+    CLAUDE = "claude"  # Fallback: Paid API
+
+
 class ScriptEngine:
     """
-    Generates video scripts from content briefs using Claude API.
+    Generates video scripts from content briefs using LLM APIs.
     
     Optimized for technical automotive content with precise pacing and structure.
     """
     
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(
+        self,
+        provider: LLMProvider = LLMProvider.GEMINI,
+        api_key: Optional[str] = None
+    ):
         """
         Initialize the script engine.
         
         Args:
-            api_key: Anthropic API key (defaults to ANTHROPIC_API_KEY env var)
+            provider: LLM provider to use (default: Gemini for cost optimization)
+            api_key: API key for chosen provider (defaults to env var)
         """
-        self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
-        if not self.api_key:
-            raise ValueError("ANTHROPIC_API_KEY not found in environment or provided")
+        self.provider = provider
         
-        self.client = Anthropic(api_key=self.api_key)
-        self.model = "claude-3-7-sonnet-20250219"  # Latest high-quality model
+        if provider == LLMProvider.GEMINI:
+            import google.generativeai as genai
+            
+            self.api_key = api_key or os.getenv("GEMINI_API_KEY")
+            if not self.api_key:
+                raise ValueError("GEMINI_API_KEY not found in environment or provided")
+            
+            genai.configure(api_key=self.api_key)
+            self.client = genai.GenerativeModel('gemini-2.0-flash-exp')
+            self.model_name = "gemini-2.0-flash-exp"
+            
+        elif provider == LLMProvider.CLAUDE:
+            from anthropic import Anthropic
+            
+            self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+            if not self.api_key:
+                raise ValueError("ANTHROPIC_API_KEY not found in environment or provided")
+            
+            self.client = Anthropic(api_key=self.api_key)
+            self.model_name = "claude-3-7-sonnet-20250219"
     
     def generate_script(self, brief: ContentBrief) -> VideoScript:
         """
@@ -50,19 +79,30 @@ class ScriptEngine:
         system_prompt = self._build_system_prompt(brief)
         user_prompt = self._build_user_prompt(brief)
         
-        # Call Claude API
-        response = self.client.messages.create(
-            model=self.model,
-            max_tokens=2000,
-            temperature=0.7,  # Balanced creativity and consistency
-            system=system_prompt,
-            messages=[
-                {"role": "user", "content": user_prompt}
-            ]
-        )
+        # Call appropriate LLM API
+        if self.provider == LLMProvider.GEMINI:
+            response = self.client.generate_content(
+                f"{system_prompt}\n\n{user_prompt}",
+                generation_config={
+                    "temperature": 0.7,
+                    "max_output_tokens": 2000,
+                }
+            )
+            script_text = response.text
+            
+        elif self.provider == LLMProvider.CLAUDE:
+            response = self.client.messages.create(
+                model=self.model_name,
+                max_tokens=2000,
+                temperature=0.7,
+                system=system_prompt,
+                messages=[
+                    {"role": "user", "content": user_prompt}
+                ]
+            )
+            script_text = response.content[0].text
         
         # Parse response into structured script
-        script_text = response.content[0].text
         scenes = self._parse_script_into_scenes(script_text, brief)
         
         # Calculate total duration based on word count and natural pacing
