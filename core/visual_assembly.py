@@ -232,13 +232,16 @@ class VisualAssembly:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.platform = platform
         
-        # Config aspect ratio
+        # Config aspect ratio and resolution
+        # HYPERLUXURY STANDARD: Full HD minimum (1920x1080 or 1080x1920)
         if platform in [Platform.TIKTOK, Platform.INSTAGRAM, Platform.YOUTUBE]:
+            # Vertical format for social media
             config.pixel_width = 1080
-            config.pixel_height = 1920
+            config.pixel_height = 1920  # Full HD Vertical
         else:
-            config.pixel_width = 1080
-            config.pixel_height = 1080
+            # Horizontal format for LinkedIn/professional platforms
+            config.pixel_width = 1920   # Full HD Horizontal
+            config.pixel_height = 1080  # Full HD Horizontal
 
     def generate_scene_visual(self, scene_data: DataScene, output_filename: Optional[str] = None) -> Path:
         if not output_filename:
