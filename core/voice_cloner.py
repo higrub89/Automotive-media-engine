@@ -157,8 +157,8 @@ class ElevenLabsVoiceCloner:
         Convert SSML tags to natural pause markers.
         
         ElevenLabs doesn't use SSML but interprets natural punctuation:
-        - [PAUSE] → ... (ellipsis = dramatic pause)
-        - [SHORT_PAUSE] → , (comma = brief pause)
+        - [PAUSE] → , (comma = brief pause, shorter than before)
+        - [SHORT_PAUSE] → (removed = continuous flow)
         
         Args:
             text: Text with [PAUSE] and [SHORT_PAUSE] tags
@@ -166,13 +166,12 @@ class ElevenLabsVoiceCloner:
         Returns:
             Text with converted pause markers
         """
-        # Replace SSML tags with natural punctuation
-        text = text.replace("[PAUSE]", "...")
-        text = text.replace("[SHORT_PAUSE]", ",")
+        # Replace SSML tags with minimal punctuation
+        text = text.replace("[PAUSE]", ",")  # Comma instead of ellipsis
+        text = text.replace("[SHORT_PAUSE]", "")  # Remove completely
         
-        # Clean up consecutive commas/ellipsis
+        # Clean up consecutive commas
         text = text.replace(",,", ",")
-        text = text.replace("....", "...")
         
         return text
     
