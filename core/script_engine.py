@@ -122,17 +122,21 @@ class ScriptEngine:
             )
             script_text = response.content[0].text
         
-        # Parse response into structured script
+        # Parse response into structured scenes
         scenes = self._parse_script_into_scenes(script_text, brief)
         
+        # CRITICAL FIX: Build clean script_text from narration only
+        # Do NOT use raw script_text which includes [VISUAL: ...] tags
+        clean_script_text = " ".join([scene.narration_text for scene in scenes])
+        
         # Calculate total duration based on word count and natural pacing
-        total_duration = self._calculate_duration(script_text, brief.target_duration)
+        total_duration = self._calculate_duration(clean_script_text, brief.target_duration)
         
         return VideoScript(
             brief=brief,
             scenes=scenes,
             total_duration=total_duration,
-            script_text=script_text
+            script_text=clean_script_text  # Clean text without visual tags
         )
     
     def _build_system_prompt(self, brief: ContentBrief) -> str:
