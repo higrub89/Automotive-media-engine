@@ -34,20 +34,22 @@ load_dotenv()
 def create_demo_brief() -> ContentBrief:
     """Create demo content brief programmatically."""
     return ContentBrief(
-        topic="Ferrari SF90 Stradale - Hybrid Hypercar Engineering",
+        topic="Porsche 911 GT3 RS - Active Aerodynamics Engineering",
         key_points=[
-            "The SF90 combines a 4.0L twin-turbo V8 (780 HP) with three electric motors (220 HP total) for 986 HP combined output",
-            "First production Ferrari with AWD - two front electric motors provide torque vectoring and instant traction",
-            "Achieves 0-100 km/h in 2.5 seconds using pre-boost strategy where electric motors spool up the turbos before acceleration"
+            "DRS (Drag Reduction System) hydraulic mechanisms",
+            "Front single-radiator concept from 911 RSR",
+            "860kg downforce at 285kmh (double the predecessor)",
+            "Active front flaps interacting with rear wing"
         ],
         target_duration=60,
         platform=Platform.LINKEDIN,
-        audience_level=AudienceLevel.INTERMEDIATE,
+        audience_level=AudienceLevel.ADVANCED,
         visual_references=[
-            "Power distribution diagram (V8 rear, 3 electric motors layout)",
-            "Torque curve comparison: pure ICE vs hybrid boost"
+            "Drag Reduction System kinematic animation",
+            "Downforce vs Speed graph comparing GT3 and GT3 RS",
+            "Airflow diagram through front hood vents"
         ],
-        call_to_action="What's your take on hybrid hypercars vs pure combustion?"
+        call_to_action="Does active aero ruin the purity of driving? Discuss."
     )
 
 
@@ -119,10 +121,10 @@ def main():
         print("🎬 Step 5: Assembling final video...")
         
         config = VideoConfig(
-            project_name="sf90_hybrid_demo",
+            project_name="porsche_gt3rs_aero",
             script=script,
             quality=QualityPreset.STANDARD,
-            voice_id="en-US-ChristopherNeural"  # Free Neural Voice
+            voice_id="es-ES-AlvaroNeural"  # Spanish Senior Mentor
         )
         
         assembler = VideoAssembler()

@@ -158,9 +158,24 @@ Your writing style:
 Your goal is to create narration that feels like a senior engineer mentoring a colleague,
 not a typical social media influencer. Think Ferrari technical briefing, not clickbait.
 
-Format your output as natural narration text, with clear paragraph breaks for scene changes.
-Each paragraph should represent one complete thought/scene (roughly 8-15 seconds of speaking)."""
-    
+Format output as blocks. Each block MUST start with a VISUAL tag, followed by the Spanish narration.
+
+Visual Types supported:
+1. `[VISUAL: title | title: "Text" | subtitle: "Text"]` -> For intro/hooks.
+2. `[VISUAL: list | title: "Header" | items: ["Item1", "Item2"]]` -> For features/specs.
+3. `[VISUAL: graph | x_label: "Label" | y_label: "Label"]` -> For performance data.
+4. `[VISUAL: concept]` -> For abstract narration.
+
+Example Output Format:
+
+[VISUAL: title | title: "Aeroactiva" | subtitle: "Porsche 911 GT3 RS"]
+La aerodinámica activa del GT3 RS redefine lo posible en un coche de calle.
+
+[VISUAL: graph | x_label: "Velocidad" | y_label: "Downforce"]
+A 285 kilómetros por hora, este alerón genera 860 kilos de carga. Es el doble que su predecesor.
+
+CRITICAL: The entire script and narration MUST be written in SPANISH (Español de España)."""
+
     def _build_user_prompt(self, brief: ContentBrief) -> str:
         """Build user prompt with specific content requirements."""
         
@@ -193,48 +208,74 @@ Requirements:
 6. Break into clear scene segments (paragraphs)
 
 Write the narration now:"""
-    
+
     def _parse_script_into_scenes(self, script_text: str, brief: ContentBrief) -> list[Scene]:
         """
-        Parse script text into timed scenes.
-        
-        Each paragraph becomes a scene with calculated timing.
+        Parse script text with [VISUAL: ...] tags into timed scenes.
         """
-        paragraphs = [p.strip() for p in script_text.split('\n\n') if p.strip()]
+        import re
+        import json
         
-        # Calculate words per second for pacing (150 WPM = 2.5 WPS)
-        words_per_second = 2.5
+        # Regex to match [VISUAL: type | key: val | ...]
+        # Matches the tag and then the following text until next tag or end
+        pattern = r'\[VISUAL:\s*(\w+)(.*?)\]\s*(.*?)(?=\[VISUAL:|$)'
+        matches = re.finditer(pattern, script_text, re.DOTALL)
         
         scenes = []
         current_time = 0.0
+        words_per_second = 2.5  # 150 WPM
         
-        for i, paragraph in enumerate(paragraphs, 1):
-            word_count = len(paragraph.split())
-            duration = word_count / words_per_second
+        for i, match in enumerate(matches, 1):
+            vtype = match.group(1).lower() # title, list, etc
+            raw_params = match.group(2)    # | key: val ...
+            narration = match.group(3).strip()
             
-            # Determine visual type based on scene position
-            if i == 1:
-                visual_type = "text"  # Opening hook with bold text
-                visual_config = {"style": "title_card", "text": brief.topic}
-            elif i == len(paragraphs):
-                visual_type = "text"  # Closing CTA
-                visual_config = {"style": "call_to_action", "text": brief.call_to_action or "Follow for more"}
+            # Parse params (quick and dirty key: val parser)
+            config = {}
+            if raw_params:
+                # Split by | and parse key: val
+                parts = raw_params.split('|')
+                for part in parts:
+                    if ':' in part:
+                        k, v = part.split(':', 1)
+                        key = k.strip()
+                        val = v.strip().strip('"').strip("'")
+                        
+                        # Handle list items slightly differently if needed
+                        # Ideally LLM outputs valid JSON, but this pipe format is more robust for simple LLMs
+                        # Special case for items: ["a", "b"]
+                        if key == 'items' and val.startswith('[') and val.endswith(']'):
+                            try:
+                                # Safe eval for list
+                                import ast
+                                val = ast.literal_eval(val)
+                            except:
+                                val = []
+                        
+                        config[key] = val
+            
+            # Fallback for narration empty (e.g. title card with no voice)
+            # But specific logic says "narration follows". 
+            # If narration is empty, assign minimal duration
+            
+            if not narration:
+                duration = 3.0
+                narration = " " # Space to allow generation
             else:
-                visual_type = "diagram"  # Technical diagram for body content
-                visual_config = {"style": "technical", "theme": "dark"}
+                word_count = len(narration.split())
+                duration = max(2.0, word_count / words_per_second)
             
             scene = Scene(
                 scene_number=i,
-                narration_text=paragraph,
+                narration_text=narration,
                 start_time=current_time,
                 duration=duration,
-                visual_type=visual_type,
-                visual_config=visual_config
+                visual_type=vtype,
+                visual_config=config
             )
-            
             scenes.append(scene)
             current_time += duration
-        
+            
         return scenes
     
     def _calculate_duration(self, script_text: str, target_duration: int) -> float:

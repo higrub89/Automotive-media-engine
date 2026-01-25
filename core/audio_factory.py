@@ -24,7 +24,7 @@ class AudioFactory:
     
     def __init__(
         self,
-        voice_id: str = "en-US-ChristopherNeural",  # Excellent technical male voice
+        voice_id: str = "es-ES-AlvaroNeural",  # Spanish Senior Mentor voice
         output_dir: str = "./assets/audio"
     ):
         """

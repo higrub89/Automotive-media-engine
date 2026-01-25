@@ -1,140 +1,196 @@
 """
-Visual Assembly: Generate high-end technical animations using Manim (Free).
+Visual Assembly: Advanced Manim Scene Generation.
 
-Engineers' choice for precise, programmatic visualization.
+Supports:
+- Semantic Scene Types (Title, Text, Graph, Concept)
+- Dark Mode "Technical Blueprint" Aesthetic
+- Dynamic visual configuration from ScriptEngine
 """
 
 import os
 from pathlib import Path
-from typing import Optional, List
-import os
-from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from manim import *
 from .models import Scene as DataScene, Platform
 
-# Configure Manim for headless rendering
+# Global Config
 config.verbosity = "WARNING"
-config.pixel_height = 1080
-config.pixel_width = 1080  # Default square
 config.frame_rate = 30
+BACKGROUND_COLOR = "#0F1115"  # Deep dark technical grey
+ACCENT_COLOR = "#E0E0E0"      # Off-white for text
+HIGHLIGHT_COLOR = "#FF3333"   # Ferrari Red for highlights
+GRID_COLOR = "#2A2F3A"        # Subtle grid
 
-
-class TechnicalSceneTemplate(Scene):
-    """
-    Base Manim scene for technical content.
-    Provides the blueprint aesthetic and grid systems.
-    """
-    def __init__(self, title_text: str, body_text: str, duration: float, **kwargs):
-        self.title_text = title_text
-        self.body_text = body_text
-        self.clip_duration = duration
+class TechnicalScene(Scene):
+    """Base class with shared aesthetic."""
+    def __init__(self, data: DataScene, **kwargs):
+        self.data = data
+        self.clip_duration = data.duration
         super().__init__(**kwargs)
+        self.camera.background_color = BACKGROUND_COLOR
 
     def construct(self):
-        # 1. Technical Grid Background
+        # 1. Background Grid
         grid = NumberPlane(
-            x_range=[-7, 7, 1],
-            y_range=[-7, 7, 1],
+            x_range=[-8, 8, 1],
+            y_range=[-9, 9, 1],
             background_line_style={
-                "stroke_color": TEAL,
-                "stroke_width": 1,
-                "stroke_opacity": 0.2
-            }
+                "stroke_color": GRID_COLOR,
+                "stroke_width": 2,
+                "stroke_opacity": 0.5
+            },
+            axis_config={"stroke_opacity": 0} # Hide axes, keept grid
         )
         self.add(grid)
         
-        # 2. Header
-        header = Text(self.title_text, font="Monospace", font_size=36)
-        header.to_edge(UP, buff=0.5)
-        self.play(Write(header), run_time=1)
+        # 2. Scene Logic Dispatch
+        self.build_scene_content()
         
-        # 3. Main Content (Abstract Technical Visualization)
-        # In production, this would be specific diagrams per topic
-        # For MVP, we generate a parametric curve representing efficiency/performance
-        curve = ParametricFunction(
-            lambda t: np.array([
-                2 * np.cos(t),
-                1.5 * np.sin(2*t),
-                0
-            ]),
-            t_range=[0, 2*PI],
-            color=RED
-        ).scale(1.5)
+        # 3. Wait Duration
+        # Wait remaining time (accounting for animation time)
+        # Note: In a real advanced engine, we'd track self.renderer.time
+        # For MVP, we just wait full duration minus a small buffer
+        self.wait(max(0.5, self.clip_duration - 1))
+
+    def build_scene_content(self):
+        """Override in subclasses."""
+        pass
+
+
+class TitleScene(TechnicalScene):
+    """Big typography for Intro/Hook."""
+    def build_scene_content(self):
+        title = Text(
+            self.data.visual_config.get("title", "TOPIC"), 
+            font="Monospace", 
+            font_size=60,
+            color=ACCENT_COLOR
+        ).to_edge(UP, buff=2.0)
         
+        subtitle = Text(
+            self.data.visual_config.get("subtitle", ""), 
+            font="Monospace", 
+            font_size=30,
+            color=HIGHLIGHT_COLOR
+        ).next_to(title, DOWN, buff=0.5)
+        
+        self.play(Write(title), run_time=1)
+        self.play(FadeIn(subtitle, shift=UP), run_time=1)
+
+
+class BulletListScene(TechnicalScene):
+    """Technical specs list."""
+    def build_scene_content(self):
+        title = Text(
+            self.data.visual_config.get("title", "SPECS"), 
+            font="Monospace", 
+            font_size=40,
+            color=HIGHLIGHT_COLOR
+        ).to_edge(UP, buff=1.0)
+        self.add(title)
+        
+        items = self.data.visual_config.get("items", [])
+        bullets = VGroup()
+        
+        for item in items:
+            row = Text(f"> {item}", font="Monospace", font_size=28, color=ACCENT_COLOR)
+            bullets.add(row)
+            
+        bullets.arrange(DOWN, aligned_edge=LEFT, buff=0.4)
+        bullets.next_to(title, DOWN, buff=1.0)
+        
+        self.play(Create(bullets), run_time=min(3, len(items)*0.8))
+
+
+class GraphScene(TechnicalScene):
+    """Data visualization (Abstract or Concrete)."""
+    def build_scene_content(self):
+        # Axes
+        axes = Axes(
+            x_range=[0, 10, 1],
+            y_range=[0, 10, 2],
+            x_length=6,
+            y_length=4,
+            axis_config={"color": ACCENT_COLOR},
+        ).to_edge(DOWN, buff=1.5)
+        
+        # Manually create non-LaTeX labels
+        x_lbl = Text("RPM", font="Monospace", font_size=20, color=ACCENT_COLOR).next_to(axes.x_axis, DOWN)
+        y_lbl = Text("Torque", font="Monospace", font_size=20, color=ACCENT_COLOR).next_to(axes.y_axis, LEFT)
+        
+        self.play(Create(axes), Write(x_lbl), Write(y_lbl), run_time=1.5)
+        
+        # Curve
+        curve = axes.plot(
+            lambda x: 2 * x - 0.1 * x**2,
+            color=HIGHLIGHT_COLOR
+        )
         self.play(Create(curve), run_time=2)
-        
-        # 4. Text Body (Truncate safely)
-        safe_text = self.body_text[:100] + "..." if len(self.body_text) > 100 else self.body_text
-        body = Text(
-            safe_text, 
+
+
+class ConceptScene(TechnicalScene):
+    """Abstract parametric visualizations for narration filler."""
+    def build_scene_content(self):
+        text = Text(
+            self.data.narration_text[:60] + "...", 
             font="Monospace", 
             font_size=24,
-            t2c={'important': RED}
-        )
-        body.next_to(curve, DOWN, buff=0.5)
-        self.play(FadeIn(body), run_time=1)
+            color=ACCENT_COLOR
+        ).to_edge(DOWN)
         
-        # Hold for remainder of duration
-        # Ensure we don't wait for negative time
-        remaining_time = max(0.1, self.clip_duration - 4)
-        self.wait(remaining_time)
+        # Abstract Engineering Shape
+        def func(t):
+            return np.array([
+                np.sin(t) * (1 + np.cos(t)),
+                np.cos(t) * np.sin(t),
+                0
+            ])
+            
+        curve = ParametricFunction(
+            func, t_range=[0, 2*PI], fill_opacity=0, stroke_color=HIGHLIGHT_COLOR, stroke_width=4
+        ).scale(2.5)
+        
+        self.play(Create(curve), run_time=3)
+        self.play(Write(text), run_time=1)
 
 
 class VisualAssembly:
-    """
-    Generates programmatic technical animations using Manim.
-    """
+    """Factory to generate specific scene types."""
     
     def __init__(self, output_dir: str = "./assets/video", platform: Platform = Platform.LINKEDIN):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.platform = platform
         
-        # Adjust aspect ratio
+        # Config aspect ratio
         if platform in [Platform.TIKTOK, Platform.INSTAGRAM, Platform.YOUTUBE]:
             config.pixel_width = 1080
             config.pixel_height = 1920
         else:
             config.pixel_width = 1080
             config.pixel_height = 1080
-            
+
     def generate_scene_visual(self, scene_data: DataScene, output_filename: Optional[str] = None) -> Path:
-        """
-        Render a Manim scene for the specific script segment.
-        """
         if not output_filename:
             output_filename = f"scene_{scene_data.scene_number}.mp4"
             
-        # Use absolute path for robustness
         output_path = (self.output_dir / output_filename).resolve()
-        
-        # Configure output for this specific render
         config.output_file = str(output_path)
         
-        # Create and render the scene
-        scene_instance = TechnicalSceneTemplate(
-            title_text=f"SCENE {scene_data.scene_number}", 
-            body_text=scene_data.narration_text,
-            duration=scene_data.duration
-        )
+        # Dispatch logic based on visual_type
+        vtype = scene_data.visual_type.lower()
         
-        # Force render
+        if vtype == "title":
+            scene_cls = TitleScene
+        elif vtype == "list":
+            scene_cls = BulletListScene
+        elif vtype == "graph":
+            scene_cls = GraphScene
+        else:
+            scene_cls = ConceptScene  # Fallback
+            
+        # Instantiate and render
+        scene_instance = scene_cls(data=scene_data)
         scene_instance.render()
         
         return output_path
-
-    def generate_thumbnail(self, title: str) -> Path:
-        """Generate static thumbnail using Manim's last frame."""
-        return Path("thumbnail_placeholder.png")  # MVP Placeholder
-
-
-def generate_visuals_for_script(script, platform: Platform = Platform.LINKEDIN) -> List[Path]:
-    assembly = VisualAssembly(platform=platform)
-    visual_paths = []
-    
-    for scene in script.scenes:
-        path = assembly.generate_scene_visual(scene)
-        visual_paths.append(path)
-    
-    return visual_paths
