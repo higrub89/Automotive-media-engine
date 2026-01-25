@@ -7,8 +7,11 @@ Engineers' choice for precise, programmatic visualization.
 import os
 from pathlib import Path
 from typing import Optional, List
+import os
+from pathlib import Path
+from typing import Optional, List
 from manim import *
-from .models import Scene, Platform
+from .models import Scene as DataScene, Platform
 
 # Configure Manim for headless rendering
 config.verbosity = "WARNING"
@@ -61,9 +64,10 @@ class TechnicalSceneTemplate(Scene):
         
         self.play(Create(curve), run_time=2)
         
-        # 4. Text Body
+        # 4. Text Body (Truncate safely)
+        safe_text = self.body_text[:100] + "..." if len(self.body_text) > 100 else self.body_text
         body = Text(
-            self.body_text[:100] + "...", 
+            safe_text, 
             font="Monospace", 
             font_size=24,
             t2c={'important': RED}
@@ -72,7 +76,8 @@ class TechnicalSceneTemplate(Scene):
         self.play(FadeIn(body), run_time=1)
         
         # Hold for remainder of duration
-        remaining_time = max(0.5, self.clip_duration - 4)
+        # Ensure we don't wait for negative time
+        remaining_time = max(0.1, self.clip_duration - 4)
         self.wait(remaining_time)
 
 
@@ -87,45 +92,36 @@ class VisualAssembly:
         self.platform = platform
         
         # Adjust aspect ratio
-        if platform in [Platform.TIKTOK, Platform.REELS, Platform.SHORTS]:
+        if platform in [Platform.TIKTOK, Platform.INSTAGRAM, Platform.YOUTUBE]:
             config.pixel_width = 1080
             config.pixel_height = 1920
         else:
             config.pixel_width = 1080
             config.pixel_height = 1080
             
-    def generate_scene_visual(self, scene_data: 'Scene', output_filename: Optional[str] = None) -> Path:
+    def generate_scene_visual(self, scene_data: DataScene, output_filename: Optional[str] = None) -> Path:
         """
         Render a Manim scene for the specific script segment.
         """
         if not output_filename:
             output_filename = f"scene_{scene_data.scene_number}.mp4"
             
-        output_path = self.output_dir / output_filename
+        # Use absolute path for robustness
+        output_path = (self.output_dir / output_filename).resolve()
         
         # Configure output for this specific render
         config.output_file = str(output_path)
         
         # Create and render the scene
-        # Note: Manim typically runs as a script, so we instantiate the class directly
         scene_instance = TechnicalSceneTemplate(
             title_text=f"SCENE {scene_data.scene_number}", 
             body_text=scene_data.narration_text,
             duration=scene_data.duration
         )
+        
+        # Force render
         scene_instance.render()
         
-        # Manim saves to media_dir by default, we need to locate the file
-        # This is a simplification; in production, you'd manage paths more strictly
-        expected_path = Path(config.media_dir) / "videos" / "1080p30" / "TechnicalSceneTemplate.mp4"
-        
-        if expected_path.exists():
-            # Move/Rename to desired location
-            os.rename(expected_path, output_path)
-            return output_path
-        
-        # Fallback if render location varies (Manim config dependent)
-        # Returning path assuming Manim config routed it correctly or we find it
         return output_path
 
     def generate_thumbnail(self, title: str) -> Path:

@@ -1,0 +1,5 @@
+# This file is used internally by FFMPEG.
+file 'file:/home/ruben/Automatitation/automotive-media-engine/media/videos/1080p30/partial_movie_files/TechnicalSceneTemplate/165984194_1428376562_1189563333.mp4'
+file 'file:/home/ruben/Automatitation/automotive-media-engine/media/videos/1080p30/partial_movie_files/TechnicalSceneTemplate/3210815559_3961382305_2380552601.mp4'
+file 'file:/home/ruben/Automatitation/automotive-media-engine/media/videos/1080p30/partial_movie_files/TechnicalSceneTemplate/3210815559_662985013_532201866.mp4'
+file 'file:/home/ruben/Automatitation/automotive-media-engine/media/videos/1080p30/partial_movie_files/TechnicalSceneTemplate/3210815559_3749831637_1421985205.mp4'

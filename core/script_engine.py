@@ -65,18 +65,38 @@ class ScriptEngine:
             self.client = Anthropic(api_key=self.api_key)
             self.model_name = "claude-3-7-sonnet-20250219"
     
-    def generate_script(self, brief: ContentBrief) -> VideoScript:
+    def generate_script(
+        self,
+        brief: ContentBrief,
+        enable_research: bool = True
+    ) -> VideoScript:
         """
         Generate a complete video script from a content brief.
         
         Args:
             brief: ContentBrief object with topic and requirements
+            enable_research: Whether to use DuckDuckGo for context enrichment
             
         Returns:
             VideoScript with structured scenes and timing
         """
-        # Build the prompt based on audience level and platform
+        # Build base prompt
         system_prompt = self._build_system_prompt(brief)
+        
+        # Inject research data if enabled
+        if enable_research:
+            try:
+                from .researcher import ResearchEngine
+                print(f"🕵️  Enriching script context for: {brief.topic}...")
+                researcher = ResearchEngine()
+                research_context = researcher.get_enriched_prompt_context(brief.topic)
+                system_prompt += f"\n\n{research_context}"
+                print("   ✓ Research context injected")
+            except ImportError:
+                print("⚠️  ResearchEngine not available (missing dependencies). Skipping.")
+            except Exception as e:
+                print(f"⚠️  Research failed: {e}. Proceeding with base knowledge.")
+
         user_prompt = self._build_user_prompt(brief)
         
         # Call appropriate LLM API

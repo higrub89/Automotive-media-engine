@@ -253,7 +253,7 @@ class VideoAssembler:
                 }
             )
             .overwrite_output()
-            .run(capture_output=True, quiet=True)
+            .run(quiet=True)
         )
     
     def _get_platform_resolution(self, platform: Platform) -> tuple:
