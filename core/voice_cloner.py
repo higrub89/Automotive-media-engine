@@ -8,7 +8,8 @@ Requires ElevenLabs Creator subscription ($5/mes).
 import os
 from pathlib import Path
 from typing import Optional, Dict
-from elevenlabs import clone, generate, set_api_key, Voice, VoiceSettings
+from elevenlabs.client import ElevenLabs
+from elevenlabs import VoiceSettings
 
 class ElevenLabsVoiceCloner:
     """
@@ -36,7 +37,8 @@ class ElevenLabsVoiceCloner:
                 "or pass api_key parameter."
             )
         
-        set_api_key(self.api_key)
+        # Initialize client
+        self.client = ElevenLabs(api_key=self.api_key)
         
         # Load voice_id from env or set to None (will clone first time)
         self.voice_id = os.getenv("ELEVENLABS_VOICE_ID")
@@ -129,19 +131,22 @@ class ElevenLabsVoiceCloner:
         
         print(f"🎙️  Generating narration ({len(processed_text)} chars)...")
         
-        # Generate audio
-        audio = generate(
+        # Generate audio using client (v2.31 API)
+        audio = self.client.text_to_speech.convert(
+            voice_id=self.voice_id,
             text=processed_text,
-            voice=self.voice_id,
-            model=model,
+            model_id=model,
             voice_settings=settings
         )
         
         # Save to file
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
+        # The audio is a generator, we need to collect all chunks
+        audio_bytes = b"".join(audio)
+        
         with open(output_path, "wb") as f:
-            f.write(audio)
+            f.write(audio_bytes)
         
         print(f"✅ Audio saved: {output_path}")
         

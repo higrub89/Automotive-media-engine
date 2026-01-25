@@ -19,24 +19,58 @@ load_dotenv()
 
 class AudioFactory:
     """
-    Generates professional voice narration using Microsoft Edge's Neural TTS (Free).
+    Generates professional voice narration.
+    
+    Supports:
+    - ElevenLabs (premium, cloned voice)
+    - Edge-TTS (free fallback)
     """
     
     def __init__(
         self,
-        voice_id: str = "es-ES-AlvaroNeural",  # Spanish Senior Mentor voice
-        output_dir: str = "./assets/audio"
+        voice_id: str = "es-ES-AlvaroNeural",
+        output_dir: str = "./assets/audio",
+        use_elevenlabs: bool = None
     ):
         """
         Initialize the audio factory.
         
         Args:
-            voice_id: Edge-TTS voice identifier
+            voice_id: Voice identifier (Edge-TTS or ElevenLabs)
             output_dir: Directory to save audio files
+            use_elevenlabs: Force ElevenLabs (auto-detect if None)
         """
-        self.voice_id = voice_id
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Auto-detect ElevenLabs from environment
+        elevenlabs_key = os.getenv("ELEVENLABS_API_KEY")
+        
+        if use_elevenlabs is None:
+            use_elevenlabs = bool(elevenlabs_key)
+        
+        self.use_elevenlabs = use_elevenlabs
+        
+        if self.use_elevenlabs:
+            # ElevenLabs configuration
+            from .voice_cloner import ElevenLabsVoiceCloner
+            from elevenlabs import VoiceSettings
+            
+            self.voice_cloner = ElevenLabsVoiceCloner()
+            
+            # Load voice settings from environment or use defaults
+            self.voice_settings = VoiceSettings(
+                stability=float(os.getenv("ELEVENLABS_STABILITY", "0.2")),
+                similarity_boost=float(os.getenv("ELEVENLABS_SIMILARITY", "0.75")),
+                style=float(os.getenv("ELEVENLABS_STYLE", "0.9")),
+                use_speaker_boost=True
+            )
+            
+            print(f"🎙️  Audio: ElevenLabs (Voice: {self.voice_cloner.voice_id})")
+        else:
+            # Edge-TTS fallback
+            self.voice_id = voice_id
+            print(f"🎙️  Audio: Edge-TTS (Voice: {voice_id})")
     
     def generate_audio(
         self,
@@ -45,6 +79,7 @@ class AudioFactory:
     ) -> Path:
         """
         Generate audio narration for entire script.
+        Routes to ElevenLabs or Edge-TTS based on configuration.
         """
         if not output_filename:
             timestamp = script.generated_at.strftime("%Y%m%d_%H%M%S")
@@ -52,7 +87,21 @@ class AudioFactory:
         
         output_path = self.output_dir / output_filename
         
-        # Run async generation
+        if self.use_elevenlabs:
+            return self._generate_elevenlabs(script, output_path)
+        else:
+            return self._generate_edge_tts(script, output_path)
+    
+    def _generate_elevenlabs(self, script: VideoScript, output_path: Path) -> Path:
+        """Generate audio using ElevenLabs."""
+        return self.voice_cloner.generate_narration(
+            text=script.script_text,
+            output_path=output_path,
+            voice_settings=self.voice_settings
+        )
+    
+    def _generate_edge_tts(self, script: VideoScript, output_path: Path) -> Path:
+        """Generate audio using Edge-TTS (original implementation)."""
         asyncio.run(self._generate_file(script.script_text, output_path))
         
         return output_path
