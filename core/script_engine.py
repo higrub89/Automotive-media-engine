@@ -164,15 +164,34 @@ Visual Types supported:
 1. `[VISUAL: title | title: "Text" | subtitle: "Text"]` -> For intro/hooks.
 2. `[VISUAL: list | title: "Header" | items: ["Item1", "Item2"]]` -> For features/specs.
 3. `[VISUAL: graph | x_label: "Label" | y_label: "Label"]` -> For performance data.
-4. `[VISUAL: concept]` -> For abstract narration.
+4. `[VISUAL: image | image_path: "filename.jpg" | caption: "Text"]` -> For real technical photos.
+5. `[VISUAL: concept]` -> For abstract narration.
+
+PROSODY CONTROL (Authority Voice):
+Use these tags to control speech pacing for dramatic effect:
+- `[PAUSE]` - Creates an 800ms dramatic silence (use sparingly for emphasis)
+- `[SHORT_PAUSE]` - Creates a 400ms natural break (use like commas for rhythm)
+
+Example with prosody:
+"El V12 atmosférico es eterno [PAUSE] pero complejo. Cada cilindro es una orquesta."
+
+STRATEGIC MONETIZATION LAYER:
+Identify ONE (1) professional tool, software, or technical component relevant to the topic.
+Mention it naturally as "industry standard" or "essential equipment" WITHOUT sounding promotional.
+
+Example:
+"Para diagnosticar esto en tiempo real, necesitas telemetría CAN-FD de grado profesional, no un escáner genérico."
+
+DO NOT use specific brand names unless they are generic industry terms (e.g., "OBDII" is fine, "Bosch XYZ" is not).
+Focus on the TYPE of tool a professional would need.
 
 Example Output Format:
 
 [VISUAL: title | title: "Aeroactiva" | subtitle: "Porsche 911 GT3 RS"]
-La aerodinámica activa del GT3 RS redefine lo posible en un coche de calle.
+La aerodinámica activa del GT3 RS redefine lo posible en un coche de calle. [SHORT_PAUSE]
 
 [VISUAL: graph | x_label: "Velocidad" | y_label: "Downforce"]
-A 285 kilómetros por hora, este alerón genera 860 kilos de carga. Es el doble que su predecesor.
+A 285 kilómetros por hora, este alerón genera 860 kilos de carga. [PAUSE] Es el doble que su predecesor.
 
 CRITICAL: The entire script and narration MUST be written in SPANISH (Español de España)."""
 
@@ -191,6 +210,9 @@ CRITICAL: The entire script and narration MUST be written in SPANISH (Español d
         if brief.call_to_action:
             cta_text = f"\n\nCall to action: {brief.call_to_action}"
         
+        # Calculate maximum word count (150 WPM = 2.5 words/sec)
+        max_words = int(brief.target_duration * 2.5)
+        
         return f"""Create a {brief.target_duration}-second video script about: {brief.topic}
 
 Key technical points to cover:
@@ -199,15 +221,15 @@ Key technical points to cover:
 Platform: {brief.platform.value.upper()}
 Target audience: {brief.audience_level.value}
 
-Requirements:
-1. Start with a strong hook (first 3 seconds must grab attention)
-2. Cover all key points with technical accuracy
-3. Use concrete examples (specific models, systems, numbers)
-4. End with a clear takeaway or question that encourages engagement
-5. Keep pacing natural for voice narration (~150 words per minute)
-6. Break into clear scene segments (paragraphs)
+CRITICAL CONSTRAINTS:
+1. Maximum {max_words} words total (150 WPM pacing for {brief.target_duration}s)
+2. Start with a strong hook (first 3 seconds must grab attention)
+3. Cover all key points with technical accuracy
+4. Use concrete examples (specific models, systems, numbers)
+5. End with a clear takeaway or question that encourages engagement
+6. Break into 3-5 clear scene segments (paragraphs)
 
-Write the narration now:"""
+Write the narration now (STAY UNDER {max_words} WORDS):"""
 
     def _parse_script_into_scenes(self, script_text: str, brief: ContentBrief) -> list[Scene]:
         """
@@ -319,18 +341,19 @@ Write the narration now:"""
 
 
 # Convenience function for quick script generation
-def generate_script_from_brief(brief: ContentBrief) -> VideoScript:
+def generate_script_from_brief(brief: ContentBrief, enable_research: bool = True) -> VideoScript:
     """
     Quick helper to generate script without instantiating engine.
     
     Args:
         brief: ContentBrief object
+        enable_research: Whether to use DuckDuckGo for context enrichment (default: True)
         
     Returns:
         Validated VideoScript
     """
     engine = ScriptEngine()
-    script = engine.generate_script(brief)
+    script = engine.generate_script(brief, enable_research=enable_research)
     
     is_valid, error = engine.validate_script(script)
     if not is_valid:

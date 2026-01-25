@@ -75,8 +75,25 @@ class AudioFactory:
         return output_path
     
     async def _generate_file(self, text: str, output_path: Path):
-        """Internal async generator."""
-        communicate = edge_tts.Communicate(text, self.voice_id)
+        """
+        Internal async generator with SSML support for dramatic prosody control.
+        
+        Processes [PAUSE] and [SHORT_PAUSE] tags for authority voice pacing.
+        """
+        # Convert script tags to SSML timing directives
+        ssml_text = text.replace("[PAUSE]", '\u003cbreak time="800ms"/\u003e')
+        ssml_text = ssml_text.replace("[SHORT_PAUSE]", '\u003cbreak time="400ms"/\u003e')
+        
+        # Wrap in SSML structure for Edge-TTS interpretation
+        full_ssml = f"""
+        \u003cspeak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='es-ES'\u003e
+            \u003cvoice name='{self.voice_id}'\u003e
+                {ssml_text}
+            \u003c/voice\u003e
+        \u003c/speak\u003e
+        """
+        
+        communicate = edge_tts.Communicate(full_ssml, self.voice_id)
         await communicate.save(str(output_path))
     
     def test_voice(self, test_text: str = "This is a test of the zero-cost audio system.") -> Path:

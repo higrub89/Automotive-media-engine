@@ -154,6 +154,76 @@ class ConceptScene(TechnicalScene):
         self.play(Write(text), run_time=1)
 
 
+class ImageTechnicalScene(TechnicalScene):
+    """
+    Displays real technical photos (engine blocks, blueprints, chassis) 
+    with professional overlay and caption.
+    
+    Transforms generic tutorials into F1-grade technical analysis.
+    """
+    def build_scene_content(self):
+        # 1. Load image (or fallback)
+        image_filename = self.data.visual_config.get("image_path", "default_engine.jpg")
+        image_path = Path("./assets/images") / image_filename
+        
+        if image_path.exists():
+            # Create Manim ImageMobject
+            img = ImageMobject(str(image_path))
+            img.height = 5  # Adjust to leave space for caption
+            
+            # Blueprint aesthetic: Desaturate and add technical border
+            img.set_opacity(0.85)
+            border = SurroundingRectangle(
+                img, 
+                color=HIGHLIGHT_COLOR, 
+                buff=0.15, 
+                stroke_width=3
+            )
+            
+            # Group and position
+            visual_group = Group(img, border).to_edge(UP, buff=1.8)
+            
+            self.play(FadeIn(img, scale=0.95), Create(border), run_time=1.5)
+            
+        else:
+            # Fallback: Elegant placeholder when image not found
+            placeholder = Rectangle(
+                width=8, 
+                height=4.5, 
+                color=GRID_COLOR, 
+                fill_opacity=0.2,
+                stroke_width=2
+            )
+            warning_text = Text(
+                "IMAGE NOT AVAILABLE", 
+                font="Monospace", 
+                font_size=28, 
+                color=ACCENT_COLOR
+            )
+            visual_group = VGroup(placeholder, warning_text).arrange(ORIGIN).to_edge(UP, buff=1.8)
+            self.play(FadeIn(visual_group), run_time=1.0)
+
+        # 2. Caption overlay (always shown)
+        caption = Text(
+            self.data.visual_config.get("caption", "TECHNICAL ANALYSIS"),
+            font="Monospace", 
+            font_size=30, 
+            color=ACCENT_COLOR,
+            weight=BOLD
+        ).next_to(visual_group, DOWN, buff=0.6)
+        
+        # Technical data bar (simulated metadata)
+        metadata = Text(
+            f"SCENE {self.data.scene_number} | DURATION {self.clip_duration:.1f}s",
+            font="Monospace",
+            font_size=18,
+            color=GRID_COLOR
+        ).to_edge(DOWN, buff=0.5)
+        
+        self.play(Write(caption), FadeIn(metadata), run_time=1.2)
+
+
+
 class VisualAssembly:
     """Factory to generate specific scene types."""
     
@@ -186,6 +256,8 @@ class VisualAssembly:
             scene_cls = BulletListScene
         elif vtype == "graph":
             scene_cls = GraphScene
+        elif vtype == "image":
+            scene_cls = ImageTechnicalScene
         else:
             scene_cls = ConceptScene  # Fallback
             
