@@ -172,8 +172,13 @@ Use these tags to control speech pacing for dramatic effect:
 - `[PAUSE]` - Creates an 800ms dramatic silence (use sparingly for emphasis)
 - `[SHORT_PAUSE]` - Creates a 400ms natural break (use like commas for rhythm)
 
-Example with prosody:
-"El V12 atmosférico es eterno [PAUSE] pero complejo. Cada cilindro es una orquesta."
+**CRITICAL NUMBERS RULE:**
+When stating performance figures (horsepower, torque, 0-100 times, top speed), ALWAYS add a SHORT_PAUSE before the number to give it weight and respect.
+
+Examples with prosody:
+- "El V12 atmosférico es eterno [PAUSE] pero complejo. Cada cilindro es una orquesta."
+- "Este motor genera [SHORT_PAUSE] 830 caballos. [SHORT_PAUSE] No es potencia, [PAUSE] es violencia controlada."
+- "De 0 a 100 en [SHORT_PAUSE] 2.9 segundos. [SHORT_PAUSE] Más rápido que parpadear."
 
 STRATEGIC MONETIZATION LAYER:
 Identify ONE (1) professional tool, software, or technical component relevant to the topic.

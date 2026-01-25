@@ -15,7 +15,7 @@ from .models import Scene as DataScene, Platform
 
 # Global Config
 config.verbosity = "WARNING"
-config.frame_rate = 30
+config.frame_rate = 60  # Hyperluxury standard: buttery smooth 60 FPS
 BACKGROUND_COLOR = "#0F1115"  # Deep dark technical grey
 ACCENT_COLOR = "#E0E0E0"      # Off-white for text
 HIGHLIGHT_COLOR = "#FF3333"   # Ferrari Red for highlights
