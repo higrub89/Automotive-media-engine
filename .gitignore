@@ -60,3 +60,5 @@ htmlcov/
 *_api_key*
 *_secret*
 credentials.json
+client_secret.json
+token.pickle
