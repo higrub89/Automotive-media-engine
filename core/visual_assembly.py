@@ -160,13 +160,72 @@ class ImageTechnicalScene(TechnicalScene):
     with professional overlay and caption.
     
     Transforms generic tutorials into F1-grade technical analysis.
+    Uses smart matching to find best available image when exact match not found.
     """
-    def build_scene_content(self):
-        # 1. Load image (or fallback)
-        image_filename = self.data.visual_config.get("image_path", "default_engine.jpg")
-        image_path = Path("./assets/images") / image_filename
+    
+    def _find_best_image(self, requested_filename: str) -> Optional[Path]:
+        """
+        Smart image matching: finds best available image based on keywords.
         
-        if image_path.exists():
+        If exact file doesn't exist, searches for images containing similar keywords.
+        """
+        images_dir = Path("./assets/images")
+        
+        # First, try exact match
+        exact_path = images_dir / requested_filename
+        if exact_path.exists():
+            return exact_path
+        
+        # If not found, try smart matching based on keywords
+        if not images_dir.exists():
+            return None
+            
+        available_images = list(images_dir.glob("*.png")) + list(images_dir.glob("*.jpg"))
+        
+        if not available_images:
+            return None
+        
+        # Extract keywords from requested filename
+        keywords = requested_filename.lower().replace("_", " ").replace("-", " ").replace(".", " ").split()
+        keywords = [k for k in keywords if len(k) > 2 and k not in ["jpg", "png", "the", "and"]]
+        
+        # Score each available image by keyword matches
+        best_match = None
+        best_score = 0
+        
+        for img_path in available_images:
+            img_name = img_path.stem.lower().replace("_", " ").replace("-", " ")
+            score = sum(1 for kw in keywords if kw in img_name)
+            
+            # Bonus for specific technical terms
+            if "engine" in img_name and "engine" in keywords:
+                score += 2
+            if "motor" in img_name and any(k in keywords for k in ["motor", "engine", "v6", "v8", "v12"]):
+                score += 2
+            if "chassis" in img_name and "chassis" in keywords:
+                score += 2
+            if "powertrain" in img_name and any(k in keywords for k in ["power", "hybrid", "electric"]):
+                score += 2
+            
+            if score > best_score:
+                best_score = score
+                best_match = img_path
+        
+        # Return best match if score is reasonable, otherwise return any image
+        if best_match and best_score > 0:
+            return best_match
+        elif available_images:
+            # Fallback: return first available image rather than placeholder
+            return available_images[0]
+        
+        return None
+    
+    def build_scene_content(self):
+        # 1. Load image using smart matching
+        image_filename = self.data.visual_config.get("image_path", "default_engine.jpg")
+        image_path = self._find_best_image(image_filename)
+        
+        if image_path and image_path.exists():
             # Create Manim ImageMobject
             img = ImageMobject(str(image_path))
             img.height = 5  # Adjust to leave space for caption
@@ -186,7 +245,7 @@ class ImageTechnicalScene(TechnicalScene):
             self.play(FadeIn(img, scale=0.95), Create(border), run_time=1.5)
             
         else:
-            # Fallback: Elegant placeholder when image not found
+            # Fallback: Elegant placeholder when no images available at all
             placeholder = Rectangle(
                 width=8, 
                 height=4.5, 
