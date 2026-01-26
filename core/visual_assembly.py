@@ -154,6 +154,67 @@ class ConceptScene(TechnicalScene):
         self.play(Write(text), run_time=1)
 
 
+class CodeScene(TechnicalScene):
+    """
+    Renders code snippets with syntax highlighting and terminal aesthetic.
+    Ideal for C, C++, Assembly demonstrations.
+    """
+    def build_scene_content(self):
+        # 1. Obtener código (fallback a Hello World si no hay dato)
+        code_source = self.data.visual_config.get("code", 
+            "#include <stdio.h>\n\n// Sistema de Telemetría\nvoid main() {\n    printf(\"Injecting logic...\");\n    char* memory = malloc(1024);\n}"
+        )
+        language = self.data.visual_config.get("language", "c")
+        
+        # Workaround: Manim Code() force reads from file in this version
+        # Write code to temp file
+        import tempfile
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix=f".{language}", delete=False) as tmp:
+            tmp.write(code_source)
+            tmp_path = tmp.name
+            
+        try:
+            # 2. Crear Objeto de Código (Estilo Terminal)
+            # Pass filename as positional argument
+            code_obj = Code(
+                tmp_path,
+                language=language
+            )
+        finally:
+            # Clean up temp file later or let OS handle it
+            pass
+        
+        # Ajustar tamaño
+        code_obj.scale(0.8).to_edge(UP, buff=1.5)
+        
+        # 3. Efecto "Cyberpunk" / Tecnológico
+        # Marco brillante
+        glow = SurroundingRectangle(
+            code_obj, 
+            color=HIGHLIGHT_COLOR, 
+            buff=0.1,
+            stroke_width=2,
+            stroke_opacity=0.8
+        )
+        
+        # Etiqueta de archivo
+        filename = Text(
+            self.data.visual_config.get("filename", "kernel_module.c"),
+            font="Monospace", 
+            font_size=20, 
+            color=ACCENT_COLOR
+        ).next_to(glow, UP, aligned_edge=LEFT)
+
+        # 4. Animación de escritura
+        self.play(Write(filename), run_time=0.5)
+        self.play(
+            Create(glow), 
+            FadeIn(code_obj, shift=DOWN),  # FadeIn es más limpio que Write para código coloreado
+            run_time=1.5
+        )
+
+
 class ImageTechnicalScene(TechnicalScene):
     """
     Displays real technical photos (engine blocks, blueprints, chassis) 
@@ -291,6 +352,13 @@ class VisualAssembly:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.platform = platform
         
+        # ✨ NUEVO: Motores de adquisición visual
+        from .ai_image_generator import AIBlueprintGenerator
+        from .broll_manager import BRollManager
+        
+        self.ai_generator = AIBlueprintGenerator()
+        self.broll_manager = BRollManager()
+        
         # Config aspect ratio and resolution
         # HYPERLUXURY STANDARD: Full HD minimum (1920x1080 or 1080x1920)
         if platform in [Platform.TIKTOK, Platform.INSTAGRAM, Platform.YOUTUBE]:
@@ -302,6 +370,80 @@ class VisualAssembly:
             config.pixel_width = 1920   # Full HD Horizontal
             config.pixel_height = 1080  # Full HD Horizontal
 
+    def _generate_ai_blueprint_video(self, scene_data: DataScene, output_path: Path) -> Optional[Path]:
+        """
+        Genera video estático con AI blueprint + zoom/pan usando FFmpeg.
+        """
+        # 1. Generar blueprint con AI
+        topic = scene_data.visual_config.get("technical_component", scene_data.narration_text[:50])
+        image_path = self.ai_generator.generate_blueprint(topic)
+        
+        if not image_path:
+            return None
+        
+        # 2. Convertir imagen estática a video con zoom (Ken Burns effect)
+        import subprocess
+        duration = scene_data.duration
+        
+        # Determine aspect ratio based on platform configuration
+        if config.pixel_width == 1920:
+            scale_filter = "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:-1:-1"
+            zoom_filter = f"zoompan=z='min(zoom+0.0015,1.5)':d={int(duration*30)}:s=1920x1080"
+        else:
+            scale_filter = "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:-1:-1"
+            zoom_filter = f"zoompan=z='min(zoom+0.0015,1.5)':d={int(duration*30)}:s=1080x1920"
+            
+        ffmpeg_cmd = [
+            "ffmpeg", "-y",
+            "-loop", "1",
+            "-i", str(image_path),
+            "-vf", f"{scale_filter},{zoom_filter}",
+            "-t", str(duration),
+            "-c:v", "libx264",
+            "-pix_fmt", "yuv420p",
+            str(output_path)
+        ]
+        
+        try:
+            subprocess.run(ffmpeg_cmd, check=True, capture_output=True)
+            return output_path if output_path.exists() else None
+        except Exception as e:
+            print(f"⚠️  FFmpeg AI render failed: {e}")
+            return None
+
+    def _generate_broll_video(self, scene_data: DataScene, output_path: Path) -> Optional[Path]:
+        """
+        Descarga y recorta B-Roll de Pexels.
+        """
+        query = scene_data.visual_config.get("broll_query", "modern technology")
+        orientation = "landscape" if self.platform in [Platform.LINKEDIN] else "portrait"
+        
+        # 1. Descargar B-Roll
+        broll_path = self.broll_manager.get_cinematic_clip(query, orientation)
+        
+        if not broll_path:
+            return None
+        
+        # 2. Recortar a la duración exacta
+        import subprocess
+        duration = scene_data.duration
+        
+        ffmpeg_cmd = [
+            "ffmpeg", "-y",
+            "-i", str(broll_path),
+            "-t", str(duration),
+            "-c:v", "libx264",
+            "-crf", "23",
+            str(output_path)
+        ]
+        
+        try:
+            subprocess.run(ffmpeg_cmd, check=True, capture_output=True)
+            return output_path if output_path.exists() else None
+        except Exception as e:
+            print(f"⚠️  FFmpeg B-Roll render failed: {e}")
+            return None
+
     def generate_scene_visual(self, scene_data: DataScene, output_filename: Optional[str] = None) -> Path:
         if not output_filename:
             output_filename = f"scene_{scene_data.scene_number}.mp4"
@@ -309,7 +451,23 @@ class VisualAssembly:
         output_path = (self.output_dir / output_filename).resolve()
         config.output_file = str(output_path)
         
-        # Dispatch logic based on visual_type
+        # 🔀 GRID DINÁMICO: Decidir backend
+        
+        # 1. B-Roll si hay query específico
+        if scene_data.visual_config.get("broll_query"):
+            print(f"   🎬 Generating B-Roll: {scene_data.visual_config['broll_query']}")
+            result = self._generate_broll_video(scene_data, output_path)
+            if result:
+                return result
+        
+        # 2. AI Blueprint si hay componente técnico
+        if scene_data.visual_config.get("technical_component"):
+            print(f"   🎨 Generating AI Blueprint: {scene_data.visual_config['technical_component']}")
+            result = self._generate_ai_blueprint_video(scene_data, output_path)
+            if result:
+                return result
+        
+        # 3. Manim (fallback para gráficos/listas/títulos)
         vtype = scene_data.visual_type.lower()
         
         if vtype == "title":
@@ -320,6 +478,8 @@ class VisualAssembly:
             scene_cls = GraphScene
         elif vtype == "image":
             scene_cls = ImageTechnicalScene
+        elif vtype == "code":
+            scene_cls = CodeScene
         else:
             scene_cls = ConceptScene  # Fallback
             
