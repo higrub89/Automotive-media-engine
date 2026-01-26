@@ -1,3 +1,4 @@
 replicate
+pexels-api
 requests
 python-dotenv
