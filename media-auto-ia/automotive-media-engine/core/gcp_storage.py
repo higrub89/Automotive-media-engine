@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional
 from google.cloud import storage
 from datetime import datetime, timedelta
-from logger import get_logger
+from .logger import get_logger
 
 log = get_logger("gcp_storage")
 

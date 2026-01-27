@@ -25,7 +25,7 @@ class TestVideoAPI:
             "topic": "Future of Autonomous Vehicles",
             "duration": 60,
             "platforms": ["linkedin"],
-            "style_archetype": "TECHNICAL"
+            "style_archetype": "technical"
         }
         
         response = self.client.post("/video/generate", json=request_data)
@@ -45,7 +45,7 @@ class TestVideoAPI:
         request_data = {
             "topic": "Electric Vehicle Charging",
             "duration": 45,
-            "style_archetype": "STORYTELLING"
+            "style_archetype": "storytelling"
         }
         
         create_response = self.client.post("/video/generate", json=request_data)

@@ -42,12 +42,13 @@ def mock_content_brief():
     )
 
 @pytest.fixture
-def mock_video_script():
+def mock_video_script(mock_content_brief):
     """Provide a sample VideoScript for testing."""
     from core.models import VideoScript, Scene
     from datetime import datetime
     
     return VideoScript(
+        brief=mock_content_brief,
         topic="Test Topic",
         total_duration=30,
         scenes=[
@@ -55,21 +56,24 @@ def mock_video_script():
                 scene_number=1,
                 visual_type="title",
                 narration_text="This is a test narration.",
-                duration=10,
+                start_time=0.0,
+                duration=10.0,
                 visual_config={"title": "Test Title", "subtitle": "Test Subtitle"}
             ),
             Scene(
                 scene_number=2,
                 visual_type="bullet_list",
                 narration_text="Here are the key points.",
-                duration=10,
+                start_time=10.0,
+                duration=10.0,
                 visual_config={"items": ["Point 1", "Point 2", "Point 3"]}
             ),
             Scene(
                 scene_number=3,
                 visual_type="title",
                 narration_text="Thank you for watching.",
-                duration=10,
+                start_time=20.0,
+                duration=10.0,
                 visual_config={"title": "Conclusion", "subtitle": ""}
             )
         ],

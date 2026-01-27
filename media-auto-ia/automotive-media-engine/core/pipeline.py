@@ -29,11 +29,13 @@ class RYAPipeline:
         self.temp_dir = Path("./temp/pipeline")
         self.temp_dir.mkdir(parents=True, exist_ok=True)
 
-    async def run(self, topic: str, style: StyleArchetype, duration: int = 60, voice_id: Optional[str] = None) -> Dict[str, Any]:
+    async def run(self, topic: str, style: StyleArchetype, duration: int = 60, voice_id: Optional[str] = None, job_id: Optional[str] = None) -> Dict[str, Any]:
         """
         Runs the full end-to-end video generation flow.
         """
-        job_id = str(uuid.uuid4())
+        if not job_id:
+            job_id = str(uuid.uuid4())
+            
         job_dir = self.temp_dir / job_id
         job_dir.mkdir(parents=True, exist_ok=True)
         

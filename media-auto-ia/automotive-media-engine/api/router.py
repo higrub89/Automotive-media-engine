@@ -47,7 +47,8 @@ async def process_video_generation(job_id: str, request: VideoRequest):
             topic=request.topic,
             style=request.style_archetype,
             duration=request.duration,
-            voice_id=request.voice_id
+            voice_id=request.voice_id,
+            job_id=job_id
         )
         jobs[job_id].update(result)
         job_log.info("Background task completed", status=result["status"])
