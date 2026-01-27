@@ -13,8 +13,11 @@ import edge_tts
 from dotenv import load_dotenv
 
 from .models import VideoScript, Scene
+from .logger import get_logger
 
 load_dotenv()
+
+log = get_logger("audio_factory")
 
 
 class AudioFactory:
@@ -66,13 +69,13 @@ class AudioFactory:
                 use_speaker_boost=True
             )
             
-            print(f"🎙️  Audio: ElevenLabs (Voice: {self.voice_cloner.voice_id})")
+            log.info("Audio engine initialized", engine="ElevenLabs", voice_id=self.voice_cloner.voice_id)
         else:
             # Edge-TTS fallback
             self.voice_id = voice_id
-            print(f"🎙️  Audio: Edge-TTS (Voice: {voice_id})")
+            log.info("Audio engine initialized", engine="Edge-TTS", voice_id=voice_id)
     
-    def generate_audio(
+    async def generate_audio(
         self,
         script: VideoScript,
         output_filename: Optional[str] = None
@@ -90,7 +93,7 @@ class AudioFactory:
         if self.use_elevenlabs:
             return self._generate_elevenlabs(script, output_path)
         else:
-            return self._generate_edge_tts(script, output_path)
+            return await self._generate_edge_tts(script, output_path)
     
     def _generate_elevenlabs(self, script: VideoScript, output_path: Path) -> Path:
         """Generate audio using ElevenLabs."""
@@ -100,13 +103,13 @@ class AudioFactory:
             voice_settings=self.voice_settings
         )
     
-    def _generate_edge_tts(self, script: VideoScript, output_path: Path) -> Path:
-        """Generate audio using Edge-TTS (original implementation)."""
-        asyncio.run(self._generate_file(script.script_text, output_path))
+    async def _generate_edge_tts(self, script: VideoScript, output_path: Path) -> Path:
+        """Generate audio using Edge-TTS."""
+        await self._generate_file(script.script_text, output_path)
         
         return output_path
     
-    def generate_scene_audio(
+    async def generate_scene_audio(
         self,
         scene: Scene,
         output_filename: Optional[str] = None
@@ -119,7 +122,7 @@ class AudioFactory:
         
         output_path = self.output_dir / output_filename
         
-        asyncio.run(self._generate_file(scene.narration_text, output_path))
+        await self._generate_file(scene.narration_text, output_path)
         
         return output_path
     
@@ -172,7 +175,7 @@ class AudioFactory:
             data = json.loads(result.stdout)
             return float(data["format"]["duration"])
         except Exception as e:
-            print(f"Warning: Could not get duration: {e}")
+            log.warning("Could not get audio duration", error=str(e))
             return 0.0
 
 

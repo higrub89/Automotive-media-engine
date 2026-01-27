@@ -12,7 +12,7 @@ from enum import Enum
 from typing import Optional
 from dotenv import load_dotenv
 
-from .models import ContentBrief, VideoScript, Scene, AudienceLevel
+from .models import ContentBrief, VideoScript, Scene, AudienceLevel, StyleArchetype
 
 load_dotenv()
 
@@ -140,7 +140,7 @@ class ScriptEngine:
         )
     
     def _build_system_prompt(self, brief: ContentBrief) -> str:
-        """Build system prompt based on content requirements."""
+        """Build system prompt based on content requirements and style archetype."""
         
         tone_map = {
             AudienceLevel.BEGINNER: "approachable and educational, avoiding jargon",
@@ -150,17 +150,47 @@ class ScriptEngine:
         
         tone = tone_map[brief.audience_level]
         
-        return f"""You are an expert technical content writer specializing in automotive engineering.
+        # Style-specific instructions
+        style_instructions = {
+            StyleArchetype.TECHNICAL: {
+                "role": "expert technical content writer specializing in automotive engineering",
+                "vibe": "senior engineer mentoring a colleague. Think Ferrari technical briefing, not clickbait.",
+                "aesthetic": "Minimalist, focusing on substance over hype",
+                "formatting": "Include `[VISUAL: graph]` and `[VISUAL: list]` for data."
+            },
+            StyleArchetype.STORYTELLING: {
+                "role": "master storyteller and narrative creator",
+                "vibe": "captivating and high-energy. Focus on hooks, tension, and emotional connection. Think 'VidaSegunRichie' style.",
+                "aesthetic": "Dynamic, focused on visual metaphors and high-retention editing cues",
+                "formatting": "Include frequent `[VISUAL: title]` and `[VISUAL: concept]` tags for dynamic changes."
+            },
+            StyleArchetype.DOCUMENTARY: {
+                "role": "educational documentary scriptwriter",
+                "vibe": "pedagogical, clear, and fascinating. Explains complex 'why' behind things. Think 'Veritasium' style.",
+                "aesthetic": "Clean, educational, using clear analogies",
+                "formatting": "Balance `[VISUAL: image]` with `[VISUAL: concept]` for clear explanations."
+            },
+            StyleArchetype.MINIMALIST: {
+                "role": "minimalist content creator",
+                "vibe": "zen, focused, and powerful. Every word counts. Think 'Ecomonos' style.",
+                "aesthetic": "Pure typography and high-contrast visuals",
+                "formatting": "Predominantly use `[VISUAL: title]` and `[VISUAL: title]` with high-impact quotes."
+            }
+        }
+        
+        instr = style_instructions.get(brief.style_archetype, style_instructions[StyleArchetype.TECHNICAL])
+        
+        return f"""You are an {instr['role']}.
 
 Your writing style:
 - Tone: {tone}
-- Precision: Every technical claim must be accurate and verifiable
+- Vibe: {instr['vibe']}
+- Precision: Every claim must be substantive and accurate
 - Structure: Clear, logical flow with strong hooks
 - Pacing: Optimized for {brief.target_duration}-second video narration
-- Aesthetic: Minimalist, focusing on substance over hype
+- Aesthetic: {instr['aesthetic']}
 
-Your goal is to create narration that feels like a senior engineer mentoring a colleague,
-not a typical social media influencer. Think Ferrari technical briefing, not clickbait.
+{instr['formatting']}
 
 Format output as blocks. Each block MUST start with a VISUAL tag, followed by the Spanish narration.
 
@@ -176,34 +206,15 @@ Use these tags to control speech pacing for dramatic effect:
 - `[PAUSE]` - Creates an 800ms dramatic silence (use sparingly for emphasis)
 - `[SHORT_PAUSE]` - Creates a 400ms natural break (use like commas for rhythm)
 
-**CRITICAL NUMBERS RULE:**
-When stating performance figures (horsepower, torque, 0-100 times, top speed), ALWAYS add a SHORT_PAUSE before the number to give it weight and respect.
-
-Examples with prosody:
-- "El V12 atmosférico es eterno [PAUSE] pero complejo. Cada cilindro es una orquesta."
-- "Este motor genera [SHORT_PAUSE] 830 caballos. [SHORT_PAUSE] No es potencia, [PAUSE] es violencia controlada."
-- "De 0 a 100 en [SHORT_PAUSE] 2.9 segundos. [SHORT_PAUSE] Más rápido que parpadear."
-
-STRATEGIC MONETIZATION LAYER:
-Identify ONE (1) professional tool, software, or technical component relevant to the topic.
-Mention it naturally as "industry standard" or "essential equipment" WITHOUT sounding promotional.
-
-Example:
-"Para diagnosticar esto en tiempo real, necesitas telemetría CAN-FD de grado profesional, no un escáner genérico."
-
-DO NOT use specific brand names unless they are generic industry terms (e.g., "OBDII" is fine, "Bosch XYZ" is not).
-Focus on the TYPE of tool a professional would need.
+**CRITICAL FLOW RULE:** 
+Start with a powerful 3-second hook. Use [PAUSE] after the hook to let it sink in.
 
 Example Output Format:
 
-[VISUAL: title | title: "Aeroactiva" | subtitle: "Porsche 911 GT3 RS"]
-La aerodinámica activa del GT3 RS redefine lo posible en un coche de calle. [SHORT_PAUSE]
-
-[VISUAL: graph | x_label: "Velocidad" | y_label: "Downforce"]
-A 285 kilómetros por hora, este alerón genera 860 kilos de carga. [PAUSE] Es el doble que su predecesor.
+[VISUAL: title | title: "El Gran Error" | subtitle: "Por qué fallan las startups"]
+La mayoría de las startups fracasan por una sola razón. [PAUSE] Y no es el dinero. [SHORT_PAUSE] Es el ego.
 
 CRITICAL: The entire script and narration MUST be written in SPANISH (Español de España)."""
-
     def _build_user_prompt(self, brief: ContentBrief) -> str:
         """Build user prompt with specific content requirements."""
         

@@ -26,6 +26,14 @@ class AudienceLevel(str, Enum):
     ADVANCED = "advanced"
 
 
+class StyleArchetype(str, Enum):
+    """Visual and narrative archetypes for video generation."""
+    TECHNICAL = "technical"           # ByCloud AI style (Blueprints, Grids)
+    STORYTELLING = "storytelling"     # VidaSegunRichie style (Focus on hooks, retention)
+    DOCUMENTARY = "documentary"       # Veritasium style (Explanatory, pedagogical)
+    MINIMALIST = "minimalist"         # Ecomonos style (Clean, typographic)
+
+
 class QualityPreset(str, Enum):
     """Video encoding quality presets."""
     ULTRA = "ultra"      # CRF 18, slow - archival quality
@@ -47,6 +55,8 @@ class ContentBrief(BaseModel):
                                 description="Target platform for formatting")
     audience_level: AudienceLevel = Field(AudienceLevel.INTERMEDIATE,
                                            description="Target audience expertise")
+    style_archetype: StyleArchetype = Field(StyleArchetype.TECHNICAL,
+                                             description="Visual and narrative style archetype")
     visual_references: Optional[List[str]] = Field(None,
                                                     description="Suggested visuals/diagrams")
     call_to_action: Optional[str] = Field(None,
