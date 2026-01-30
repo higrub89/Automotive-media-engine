@@ -31,49 +31,68 @@ class AudioFactory:
     
     def __init__(
         self,
-        voice_id: str = "es-ES-AlvaroNeural",
+        voice_id: str = "auto",
         output_dir: str = "./assets/audio",
-        use_elevenlabs: bool = None
+        use_elevenlabs: bool = False  # Default to False for cost optimization
     ):
         """
         Initialize the audio factory.
         
         Args:
-            voice_id: Voice identifier (Edge-TTS or ElevenLabs)
+            voice_id: Voice identifier (mapped to style if 'auto')
             output_dir: Directory to save audio files
-            use_elevenlabs: Force ElevenLabs (auto-detect if None)
+            use_elevenlabs: Force ElevenLabs (default False)
         """
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
-        # Auto-detect ElevenLabs from environment
-        elevenlabs_key = os.getenv("ELEVENLABS_API_KEY")
-        
-        if use_elevenlabs is None:
-            use_elevenlabs = bool(elevenlabs_key)
-        
+        # 1. Voice Style Mapping (Spanish Priority)
+        # Mapping archetypes/styles to specific Edge-TTS Neural voices
+        self.EDGE_VOICE_MAP = {
+            "technical": "es-ES-AlvaroNeural",      # Calm, serious, authoritative
+            "storytelling": "es-ES-ElviraNeural",   # Dynamic, expressive, warm (Female)
+            "documentary": "es-ES-DarioNeural",     # Deep, narrative, documentary style (Male)
+            "minimalist": "es-ES-AlvaroNeural",     # Clean standard
+            "default": "es-ES-AlvaroNeural"
+        }
+
+        # Resolve voice ID
+        if voice_id == "auto" or voice_id in self.EDGE_VOICE_MAP:
+            self.voice_id = self.EDGE_VOICE_MAP.get(voice_id, self.EDGE_VOICE_MAP["default"]) 
+        else:
+            self.voice_id = voice_id
+
+        # 2. Engine Selection
         self.use_elevenlabs = use_elevenlabs
         
         if self.use_elevenlabs:
-            # ElevenLabs configuration
-            from .voice_cloner import ElevenLabsVoiceCloner
-            from elevenlabs import VoiceSettings
-            
-            self.voice_cloner = ElevenLabsVoiceCloner()
-            
-            # Load voice settings from environment or use defaults
-            self.voice_settings = VoiceSettings(
-                stability=float(os.getenv("ELEVENLABS_STABILITY", "0.2")),
-                similarity_boost=float(os.getenv("ELEVENLABS_SIMILARITY", "0.75")),
-                style=float(os.getenv("ELEVENLABS_STYLE", "0.9")),
-                use_speaker_boost=True
-            )
-            
-            log.info("Audio engine initialized", engine="ElevenLabs", voice_id=self.voice_cloner.voice_id)
-        else:
-            # Edge-TTS fallback
-            self.voice_id = voice_id
-            log.info("Audio engine initialized", engine="Edge-TTS", voice_id=voice_id)
+            elevenlabs_key = os.getenv("ELEVENLABS_API_KEY")
+            if not elevenlabs_key:
+                log.warning("ElevenLabs requested but no API KEY found. Falling back to Edge-TTS.")
+                self.use_elevenlabs = False
+            else:
+                # ElevenLabs configuration (Lazy load)
+                from .voice_cloner import ElevenLabsVoiceCloner
+                from elevenlabs import VoiceSettings
+                
+                try:
+                    self.voice_cloner = ElevenLabsVoiceCloner()
+                    
+                    # Load voice settings
+                    self.voice_settings = VoiceSettings(
+                        stability=float(os.getenv("ELEVENLABS_STABILITY", "0.2")),
+                        similarity_boost=float(os.getenv("ELEVENLABS_SIMILARITY", "0.75")),
+                        style=float(os.getenv("ELEVENLABS_STYLE", "0.9")),
+                        use_speaker_boost=True
+                    )
+                    log.info("Audio engine initialized", engine="ElevenLabs", voice_id=self.voice_cloner.voice_id)
+                except Exception as e:
+                    log.error(f"Failed to init ElevenLabs: {e}. Falling back to Edge-TTS.")
+                    self.use_elevenlabs = False
+
+        if not self.use_elevenlabs:
+            # Edge-TTS (Default)
+            log.info("Audio engine initialized", engine="Edge-TTS", voice_id=self.voice_id)
     
     async def generate_audio(
         self,

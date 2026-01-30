@@ -10,7 +10,7 @@ from .audio_factory import AudioFactory
 from .visual_assembly import VisualAssembly
 from .video_assembler import VideoAssembler
 from .music_factory import MusicFactory
-from .gcp_storage import GCPStorage
+from .s3_storage import S3Storage
 from .logger import get_logger
 from .billing import CostEstimator, UsageMetrics
 
@@ -25,7 +25,7 @@ class RYAPipeline:
         self.visual_assembly = VisualAssembly()
         self.video_assembler = VideoAssembler()
         self.music_factory = MusicFactory()
-        self.gcp_storage = GCPStorage()
+        self.storage = S3Storage()
         
         self.temp_dir = Path("./temp/pipeline")
         self.temp_dir.mkdir(parents=True, exist_ok=True)
@@ -73,8 +73,9 @@ class RYAPipeline:
                 usage_metrics.llm_input_tokens += script.usage_metadata.get("input_tokens", 0)
                 usage_metrics.llm_output_tokens += script.usage_metadata.get("output_tokens", 0)
             
-            # Track TTS Usage (ElevenLabs charges by character)
+            # Track TTS Usage
             usage_metrics.tts_characters += len(script.script_text)
+            usage_metrics.tts_provider = "elevenlabs" if self.audio_factory.use_elevenlabs else "edge_tts"
 
             if progress_callback:
                 progress_callback(15, "Generating narration...")
@@ -138,14 +139,14 @@ class RYAPipeline:
             if progress_callback:
                 progress_callback(95, "Uploading to cloud...")
             
-            # 6. Upload to GCP
+            # 6. Upload to Cloud (S3/R2)
             video_path = Path(generation_result.video_path)
-            gcs_url = self.gcp_storage.upload_video(video_path)
+            cloud_url = self.storage.upload_video(video_path)
             
-            if gcs_url:
-                log.info("Video uploaded to GCP", gcs_url=gcs_url)
+            if cloud_url:
+                log.info("Video uploaded to Cloud", url=cloud_url)
             else:
-                log.warning("GCP upload skipped (no credentials)", local_path=str(video_path.absolute()))
+                log.warning("Cloud upload skipped (no credentials)", local_path=str(video_path.absolute()))
             
             # Calculate final costs
             cost_report = CostEstimator.calculate_cost(usage_metrics)
@@ -158,7 +159,7 @@ class RYAPipeline:
             result = {
                 "job_id": job_id,
                 "status": "completed",
-                "output_url": gcs_url or str(video_path.absolute()),
+                "output_url": cloud_url or str(video_path.absolute()),
                 "metadata": final_metadata
             }
             

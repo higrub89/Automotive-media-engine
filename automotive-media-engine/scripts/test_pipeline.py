@@ -20,9 +20,8 @@ async def main():
     pipeline = RYAPipeline()
     
     # Force mock mode for GCP if no credentials
-    if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
-        print("⚠️ No GCP Credentials. GCS upload will be simulated.")
-        pipeline.gcp_storage.bucket = None
+    print("⚠️ Cloud Credentials not checked (using generic storage).")
+    # pipeline.storage.client checks credentials internally
         
     # Define test callback
     def print_progress(progress: int, message: str):
