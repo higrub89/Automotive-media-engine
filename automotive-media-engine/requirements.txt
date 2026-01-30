@@ -1,0 +1,41 @@
+# Zero-Cost Core
+google-generativeai>=0.8.0
+edge-tts>=6.1.9
+manim>=0.18.0
+duckduckgo-search>=5.0.0
+
+# Legacy / Optional
+anthropic>=0.40.0
+elevenlabs>=1.0.0
+
+# Frameworks & Utils
+fastapi
+uvicorn
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+loguru
+redis>=5.0.0
+rq>=1.15.0
+openai>=1.0.0
+replicate>=0.15.0
+
+# Media & Visuals
+Pillow>=10.0.0
+matplotlib>=3.8.0
+
+# Google Cloud
+google-cloud-storage
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2
+
+# Dev / Testing
+requests>=2.31.0
+PyYAML>=6.0.1
+black>=23.0.0
+ruff>=0.1.0
+pytest
+pytest-asyncio
+pytest-mock
+httpx
+ffmpeg-python

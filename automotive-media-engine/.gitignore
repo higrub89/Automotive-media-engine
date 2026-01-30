@@ -62,3 +62,4 @@ htmlcov/
 credentials.json
 client_secret.json
 token.pickle
+.env.local
