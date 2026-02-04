@@ -1,154 +1,103 @@
 # Automotive Media Engine 🏎️
 
-> **Precision engineering applied to content generation.** An automated pipeline for creating technical automotive videos with the exactitude of aerospace systems and the aesthetics of Italian supercars.
+> **Precision engineering applied to content generation.** An automated pipeline for creating technical automotive videos at **zero marginal cost**, optimized for LinkedIn, TikTok, and YouTube.
 
-## Mission Statement
+## 🎯 Project Mission
+Transform technical automotive expertise into a high-frequency content machine. Built for **scalability**, **observability**, and **maximum cost efficiency**.
 
-Transform technical expertise into scalable content revenue through systematic automation. This is not an "influencer tool"—it's a **production system** built to industrial standards.
+---
 
-## System Architecture
+## 🏗️ System Architecture
 
 ```
 ┌─────────────────┐
-│  Content Brief  │  (Markdown input)
+│  Next.js UI     │  (Alex's Dashboard)
 └────────┬────────┘
-         │
          ▼
-┌─────────────────┐
-│ Script Engine   │  (Claude API + Templating)
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Audio Factory   │  (ElevenLabs TTS)
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Visual Assembly │  (Matplotlib/Pillow/Stock)
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Video Assembler │  (FFmpeg Automation)
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Platform QC    │  (Format validation)
-└────────┬────────┘
-         │
-         ▼
-     [OUTPUT]  → LinkedIn/TikTok/YouTube
+┌─────────────────┐     ┌─────────────────┐
+│ FastAPI Engine  │ ──▶ │ Redis Queue(RQ) │
+└────────┬────────┘     └────────┬────────┘
+         │                       ▼
+         │              ┌─────────────────┐
+         └────────────▶ │ Pipeline Worker │
+                        └────────┬────────┘
+                                 ▼
+           ┌─────────────────────┴─────────────────────┐
+           │                                           │
+  ┌────────▼────────┐                         ┌────────▼────────┐
+  │ Script (LLM)    │                         │ Audio (TTS)     │
+  │ Gemini 2.0 Flash│                         │ Edge-TTS (Free) │
+  └────────┬────────┘                         └────────┬────────┘
+           │                                           │
+  ┌────────▼────────┐                         ┌────────▼────────┐
+  │ Visuals (Manim) │                         │ Cloud Storage   │
+  │ Style-Aware Gen │                         │ Cloudflare R2   │
+  └────────┬────────┘                         └────────┬────────┘
+           │                                           │
+           ▼                 [SOCIALS]                 ▼
+      [OUTPUT]  ──────▶  LinkedIn / TikTok  ◀────── [URL]
 ```
 
-## Quick Start
+## ✨ Key Features
+
+*   🚀 **Zero Marginal Cost**: Using Edge-TTS and Gemini 2.0 Flash to achieve ~$0.0001 per video generation.
+*   📊 **Real-time Observability**: Granular progress tracking (0-100%) and live status messages via API.
+*   💰 **Billing System**: Automatic cost tracking for every job.
+*   🎥 **Multi-Style Engine**: 4 distinct visual archetypes (Technical, Storytelling, Documentary, Minimalist).
+*   🌐 **Cloud Native**: S3-compatible storage adapter ready for Cloudflare R2 (zero egress fees).
+
+---
+
+## ⚙️ Quick Start
 
 ### 1. Environment Setup
-
 ```bash
-cd ~/Automatitation/automotive-media-engine
+cd automotive-media-engine
+/usr/bin/python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
 ### 2. API Configuration
+Required in `.env`:
+*   `GEMINI_API_KEY`: For script generation (Primary).
+*   `ELEVENLABS_API_KEY`: (Optional) For premium voice cloning.
+*   `S3_ENDPOINT_URL`: For R2/S3 storage.
 
-Create `.env` file:
-
+### 3. Run the Pipeline
 ```bash
-cp .env.example .env
-# Edit .env with your API keys
+# Start Redis
+docker run -p 6379:6379 -d redis
+
+# Start Worker (Terminal 1)
+export PYTHONPATH=$PYTHONPATH:. && ./venv/bin/python core/worker.py
+
+# Start API (Terminal 2)
+uvicorn api.main:app --reload
+
+# Test via CLI (Terminal 3)
+./venv/bin/python scripts/test_pipeline.py
 ```
-
-Required API keys:
-- **Anthropic Claude**: For script generation
-- **ElevenLabs**: For voice synthesis
-
-See [docs/api_setup.md](docs/api_setup.md) for detailed instructions.
-
-### 3. Generate Your First Video
-
-```bash
-# Create a content brief
-cp templates/content_brief_template.md content/my_first_video.md
-# Edit with your technical content
-
-# Generate video
-python -m core.cli generate content/my_first_video.md --output my_first_video
-
-# Output will be in: output/my_first_video.mp4
-```
-
-## Project Structure
-
-```
-automotive-media-engine/
-├── core/                   # Pipeline components
-│   ├── models.py          # Data structures
-│   ├── script_engine.py   # Script generation
-│   ├── audio_factory.py   # TTS integration
-│   ├── visual_assembly.py # Visual generation
-│   ├── video_assembler.py # FFmpeg automation
-│   └── cli.py             # Command-line interface
-├── mcp-servers/           # Model Context Protocol servers
-│   ├── content_research_server.py
-│   └── local_knowledge_server.py
-├── assets/                # Generated assets
-│   ├── audio/
-│   ├── video/
-│   └── diagrams/
-├── content/               # Your content briefs (input)
-├── templates/             # Content templates
-├── output/                # Final videos (export)
-├── docs/                  # Documentation
-└── tests/                 # Test suite
-```
-
-## Development Roadmap
-
-- **Week 1-2**: MVP - First video generation
-- **Week 3-4**: Content production & testing
-- **Week 5-6**: Monetization setup
-- **Week 7-10**: Scaling & automation
-- **Week 11-16**: Revenue optimization
-
-**Target**: €3000/month recurring revenue by Week 16 (May 2026)
-
-See [task.md](../../.gemini/antigravity/brain/22c8b31f-080e-4df6-b5a9-81d08a379fb3/task.md) for detailed breakdown.
-
-## Technical Specifications
-
-### Supported Platforms
-- **LinkedIn**: 1080x1080 (square), 60-120 seconds
-- **TikTok/Reels**: 1080x1920 (vertical), 15-90 seconds
-- **YouTube Shorts**: 1080x1920 (vertical), 15-60 seconds
-
-### Quality Presets
-- **Ultra**: CRF 18, slow (archival quality)
-- **Standard**: CRF 23, medium (social media)
-- **Fast**: CRF 28, fast (testing)
-
-### Content Philosophy
-
-1. **Technical Precision**: Every claim must be verifiable
-2. **Aesthetic Minimalism**: Clean, distraction-free visuals
-3. **Mentorship Value**: Each video teaches something concrete
-
-## Cost Structure
-
-- **ElevenLabs**: ~$22/month (Starter)
-- **Claude API**: ~$20-50/month (usage-based)
-- **Total**: ~$50-75/month operational cost
-
-## Contributing
-
-This is a personal production system. However, if you're building similar tools, feel free to reference the architecture.
-
-## License
-
-Proprietary - All rights reserved
 
 ---
 
-**Built with engineering discipline. Optimized for revenue generation.**
+## 📉 Cost Comparison
+
+| Component | Premium (v1.0) | Zero-Cost (Current) | Savings |
+|-----------|----------------|---------------------|---------|
+| Script | Claude ($0.02) | **Gemini (Free/Low)** | 100% |
+| Audio | ElevenLabs ($0.09) | **Edge-TTS ($0.00)** | 100% |
+| Storage | GCP (Egress fees) | **Cloudflare R2 ($0.00)**| 100% |
+| **Total** | **~$0.15/video** | **~$0.0001/video** | **99.9%** |
+
+---
+
+## 🤝 Project Structure
+*   `api/`: FastAPI routes and request/response models.
+*   `core/`: The heart of the engine (Pipeline, Scripting, Audio, Visuals).
+*   `docs/`: Architecture Decision Records (ADR) and handoff guides.
+*   `scripts/`: Testing and maintenance utilities.
+*   `assets/`: Local static files (music, fonts, temporary files).
+
+---
+**Built with engineering discipline. Optimized for zero-cost scalability.**

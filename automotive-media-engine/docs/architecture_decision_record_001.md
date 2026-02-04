@@ -39,6 +39,8 @@ We will adopt a **"Cloud-Native Low-Cost"** strategy, prioritizing managed servi
 *   **Voice Emotionality:** Edge-TTS is less expressive than ElevenLabs. We accept this trade-off for the MVP/Scale phase.
 *   **Vendor Lock-In (Minor):** Moving to Hetzner requires managing a VPS (Docker), slightly more ops work than serverless Cloud Run.
 
-## Roadmap Updates
-*   Prioritize `audio_factory.py` refactor to make Edge-TTS default.
-*   Implement `S3Storage` class to replace `GCPStorage`, supporting Cloudflare R2.
+## Implementation Status (2026-01-30)
+*   ✅ `audio_factory.py` refactor to Edge-TTS: **Completed**.
+*   ✅ `S3Storage` adapter for R2: **Completed**.
+*   ✅ `CostEstimator` with new pricing models: **Completed**.
+*   ✅ `RYAPipeline` integration: **Completed**.

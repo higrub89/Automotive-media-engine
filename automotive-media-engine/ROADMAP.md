@@ -1,177 +1,86 @@
 # RYA.ai - Production Roadmap
 
-> **Last Updated:** 2026-01-27  
-> **Status:** Multi-Style Engine Operational ✅  
-> **Next Phase:** Production Hardening 🔧
+> **Last Updated:** 2026-01-30  
+> **Status:** Low-Cost Infrastructure Pivot & Observability Implemented ✅  
+> **Next Phase:** Cloud Deployment & Social Media Automation 🚀
 
 ---
 
-## 🎯 Current State (v1.0 - MVP Complete)
+## 🎯 Current State (v1.1 - Low-Cost Production Ready)
 
 ### ✅ What's Working
-- ✅ Multi-style content engine (4 archetypes: Technical, Storytelling, Documentary, Minimalist)
-- ✅ Script generation with LLM (Gemini/Claude) + Research integration
-- ✅ Audio narration (ElevenLabs + Edge-TTS fallback)
-- ✅ Manim visual generation with style-aware scenes
-- ✅ Background music mixing (FFmpeg)
-- ✅ FastAPI backend with async job processing
-- ✅ GCP Storage integration
-- ✅ Manual end-to-end pipeline verification
+- ✅ **Zero-Cost Audio**: Edge-TTS is now the default provider (99.9% cost reduction).
+- ✅ **Observability**: Real-time progress updates (0-100%) and granular status messages.
+- ✅ **Billing System**: Automated cost estimation (USD) per generation job.
+- ✅ **S3-Compatible Storage**: Adapter ready for Cloudflare R2 (zero egress fees).
+- ✅ **Modern Brain**: Gemini 2.0 Flash integrated for fast, low-cost script generation.
+- ✅ **Multi-style Engine**: 4 archetypes (Technical, Storytelling, Documentary, Minimalist) with style-aware Manim visuals.
+- ✅ **Structured Logging**: Loguru integration with job_id correlation.
+- ✅ **Automated Testing**: Integration tests for pipeline and API.
 
-### ⚠️ Known Limitations
-- Logging via `print()` statements (not production-grade)
-- No automated testing (fragile codebase)
-- No job persistence (lost on server restart)
-- No monitoring/observability
-- Not containerized (manual deployment)
+### ⚠️ Known Blockers / Pending Issues
+- **Music Mixing**: Music library needs more variety; fallback is generic.
+- **Research Ratelimits**: DuckDuckGo search occasionally hits ratelimits in high volume.
+- **Docker Networking**: Redis/Worker communication needs stabilization for cloud environments.
 
 ---
 
 ## 📋 Roadmap Phases
 
-### **Phase 1: Production Hardening** (Week 1-2) 🔥 **PRIORITY**
+### **Phase 1: Production Hardening** (DONE ✅)
+*Goal: Reliability and Debuggability.*
+- [x] Structured Logging (Loguru).
+- [x] Automated Integration Tests (Pytest).
+- [x] Job ID Correlation across all modules.
 
-**Goal:** Make the system reliable and debuggable for production use.
+### **Phase 2: Zero-Cost Economy** (DONE ✅)
+*Goal: Marginal cost < $0.01 per video.*
+- [x] **Edge-TTS** Integration (Free Neural Voices).
+- [x] **Billing Tracker** (Real-time cost calculation).
+- [x] **Gemini 2.0 Flash** migration.
+- [x] **S3 Storage Adapter** (Ready for Cloudflare R2).
 
-#### 1.1 Structured Logging ✅
-- [x] Install `loguru` dependency
-- [x] Create `core/logger.py` with centralized config
-- [x] Replace all `print()` in:
-  - [x] `core/pipeline.py`
-  - [x] `core/script_engine.py` (verified via pipeline tests)
-  - [x] `core/audio_factory.py`
-  - [x] `core/visual_assembly.py` (verified via pipeline tests)
-  - [x] `core/music_factory.py`
-  - [x] `api/router.py`
-- [x] Configure log levels (DEBUG, INFO, WARNING, ERROR)
-- [x] Add JSON logging for GCP Cloud Logging compatibility
-- [x] Include job_id correlation in all logs
+### **Phase 3: Scalability & Cloud Ops** (Week 4 - IN PROGRESS 🏗️)
+- [ ] **Hetzner Cloud Deployment**: Move from local to CPX21 VPS.
+- [ ] **Job Persistence**: Ensure Redis jobs survive server restarts.
+- [ ] **Retry Logic**: Implement automated retries for transient failures (e.g., image gen 404s).
+- [ ] **Docker Swarm/Compose**: Finalize production-ready stack orchestration.
 
-**Success Criteria:** Can trace any job failure through structured logs.
+### **Phase 4: Monitoring & Advanced Visuals** (Week 5)
+- [ ] **UI Performance Dashboard**: Visualize cost trends and render times.
+- [ ] **Cascading Visual Engine**: Implement Pollinations -> Flux -> DALL-E 3 fallback logic.
+- [ ] **B-Roll Auto-Search**: Higher precision style-adjectives for Pexels search.
 
----
+### **Phase 5: Frontend & User Experience** (Alex's Current Task 🎨)
+- [ ] Create **Next.js Dashboard**.
+- [ ] Implement **Progress Polling UI** with real-time status messages.
+- [ ] Video History & Download Gallery.
+- [ ] **Handoff Documentation**: Completed in `docs/frontend_handoff.md`.
 
-#### 1.2 Automated Testing ✅
-- [x] Install `pytest` + `pytest-asyncio`
-- [x] Create `tests/integration/` directory
-- [x] Write integration tests:
-  - [x] `test_pipeline.py` - End-to-end storytelling & technical video
-  - [x] `test_api.py` - API endpoint & status validation
-- [x] Mock external APIs (Gemini, ElevenLabs, DuckDuckGo)
-- [x] Configure GitHub Actions CI workflow
-- [x] Add badge to README.md showing test status
-
-**Success Criteria:** All tests pass on every push. CI fails if tests break.
-
----
-
-### **Phase 2: Scalability & Resilience** (Week 3-4)
-
-#### 2.1 Job Queue with Persistence
-- [ ] Evaluate: Redis vs Google Cloud Tasks
-- [ ] Implement job state machine (`queued` → `processing` → `completed`/`failed`)
-- [ ] Add retry logic for transient failures
-- [ ] Implement job TTL (auto-cleanup after 24h)
-- [ ] Update API to return job progress percentage
-- [ ] Add `/video/retry/{job_id}` endpoint
-
-**Success Criteria:** Jobs survive server restarts. Failed jobs can be retried.
+### **Phase 6: Distribution & Revenue** (Next Priority 💰)
+- [ ] **LinkedIn Autopublish**: One-click upload with AI-generated captions.
+- [ ] **Analytics loop**: Feed view metrics back into the Research engine.
+- [ ] **Multi-platform formatting**: Auto-crop videos for TikTok/Shorts (9:16).
 
 ---
 
-#### 2.2 Containerization
-- [ ] Create `Dockerfile` with multi-stage build
-- [ ] Create `docker-compose.yml` for local development
-- [ ] Configure `.dockerignore`
-- [ ] Test container locally
-- [ ] Push to Google Artifact Registry
-- [ ] Deploy to Cloud Run (GCP)
+## 🚀 Immediate Next Steps
 
-**Success Criteria:** Can deploy the entire app with a single `docker run` command.
-
----
-
-### **Phase 4: Monitoring & Observability** (Week 5-6)
-
-#### 4.1 Performance Metrics
-- [ ] Implement video generation duration tracking
-- [ ] Track API credit usage (Gemini, ElevenLabs, Anthropic)
-- [ ] Monitor FFmpeg rendering times
-- [ ] Configure Google Cloud Monitoring dashboards
-- [ ] Set up alerting for:
-  - [ ] High error rate (>10% failed jobs)
-  - [ ] API quota near limit
-  - [ ] Slow generation times (>5 min for 60s video)
-
-**Success Criteria:** Real-time visibility into system health.
-
----
-
-### **Phase 5: Frontend & User Experience** (Coordinated with Alex)
-
-#### 5.1 Web Interface (Alex's Task)
-- [ ] Design mockups for video generation form
-- [ ] Implement React/Vue frontend
-- [ ] Connect to FastAPI backend
-- [ ] Add job status polling UI
-- [ ] Implement video preview & download
-
-#### 4.2 Backend Enhancements for Frontend
-- [ ] Add user authentication (Firebase Auth / OAuth)
-- [ ] Implement rate limiting per user
-- [ ] Add video history endpoint (`/video/history`)
-- [ ] Generate video thumbnails
-- [ ] Add download endpoint with signed URLs
-
-**Success Criteria:** Non-technical users can generate videos through the web UI.
-
----
-
-### **Phase 6: Advanced Features** (Post-MVP)
-
-#### 6.1 Multi-Platform Publishing
-- [ ] Implement `linkedin_publisher.py`
-- [ ] Implement `tiktok_publisher.py`
-- [ ] Implement `instagram_publisher.py`
-- [ ] Auto-format videos for each platform (aspect ratio, duration limits)
-
-#### 5.2 Analytics & Feedback Loop
-- [ ] Collect YouTube video metrics (views, retention)
-- [ ] Analyze top-performing topics
-- [ ] Feed insights back to `researcher.py`
-
-#### 5.3 Enhanced Customization
-- [ ] Allow users to specify visual style (blueprint, photorealistic)
-- [ ] Add music genre selection
-- [ ] Support custom voice uploads (ElevenLabs cloning)
-
----
-
-## 🚀 Immediate Next Steps (Phase 2)
-
-1. **Job Queue (Scalability):** Implement Redis / Google Cloud Tasks to persist jobs.
-2. **Containerization:** Dockerize the application for Cloud Run deployment.
-3. **Frontend Handoff:** Finalize API documentation for Alex.
+1. **Frontend Support**: Assist Alex in connecting the Next.js UI to the `/generate` and `/status` endpoints.
+2. **Infrastructure**: Deploy the Redis + Worker + API stack to a Hetzner trial instance.
+3. **LinkedIn Integration**: Research and implement the LinkedIn Video API for automated posting.
 
 ---
 
 ## 📊 Success Metrics
 
-| Metric | Current | Target (Phase 1) | Target (Phase 3) |
+| Metric | Start (v1.0) | Current (v1.1) | Target (Phase 6) |
 |--------|---------|------------------|------------------|
-| Test Coverage (Integration) | 100% | 60% | 80% |
-| Mean Time to Debug | <1 min | <15 min | <5 min |
-| Job Success Rate | 100% (Test) | >90% | >95% |
-| Deployment Time | Manual | <10 min | <2 min (automated) |
+| Marginal Cost/Video | ~$0.15 | **<$0.001** | <$0.001 |
+| Job Feedback | None (Static) | **Live (Granular)** | Live (Visual) |
+| Render Time (60s) | ~2 min | ~90 sec | <60 sec |
+| Automation Level | Manual CLI | **Queue Based** | **Autopublish** |
 
 ---
 
-## 🤝 Team Responsibilities
-
-- **Ruben:** Backend, core pipeline, testing, infrastructure
-- **Alex:** Frontend, UI/UX, API integration
-- **Shared:** Documentation, deployment, monitoring
-
----
-
-*Last manual pipeline test: 2026-01-27 - PASSED ✅*
+*Last Pipeline Verification: 2026-01-30 - PASSED (Cost: $0.0001) ✅*
